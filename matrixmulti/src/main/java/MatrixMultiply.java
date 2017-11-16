@@ -8,8 +8,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -21,6 +19,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 /**
  * @author TripleZ
+ * @since 2017-11-15
+ * @version 1.0
  */
 public class MatrixMultiply {
     // Map.
@@ -44,9 +44,10 @@ public class MatrixMultiply {
             String[] tokens = value.toString().split(",");
             if ("A".equals(flag)) {
                 for (int i = 1; i <= colNum; i++) {
-                    Text k = new Text(rowIndexA + "," + i);
+                    Text k = new Text(rowIndexA + "," + i); // 将 A 矩阵的行列值写入 key 中
                     for (int j = 0; j < tokens.length; j++) {
-                        Text v = new Text("a," + (j + 1) + "," + tokens[j]);
+                        int temp = Integer.parseInt(tokens[j]) + 1;
+                        Text v = new Text("a," + (j + 1) + "," + String.valueOf(temp));
                         context.write(k, v);
                     }
                 }
@@ -55,7 +56,8 @@ public class MatrixMultiply {
                 for (int i = 1; i <= rowNum; i++) {
                     for (int j = 0; j < tokens.length; j++) {
                         Text k = new Text(i + "," + (j + 1));
-                        Text v = new Text("b," + rowIndexB + "," + tokens[j]);
+                        int temp = Integer.parseInt(tokens[j]) + 1;
+                        Text v = new Text("b," + rowIndexB + "," + String.valueOf(temp));
                         context.write(k, v);
                     }
                 }
@@ -84,7 +86,7 @@ public class MatrixMultiply {
             Iterator<String> mKeys = mapA.keySet().iterator();
             while (mKeys.hasNext()) {
                 String mkey = mKeys.next();
-                if (mapB.get(mkey) == null) {// 因为mkey取的是mapA的key集合，所以只需要判断mapB是否存在即可。
+                if (mapB.get(mkey) == null) {// 因为 mkey 取的是 mapA 的 key 集合，所以只需要判断 mapB 是否存在即可。
                     continue;
                 }
                 result += Integer.parseInt(mapA.get(mkey))
@@ -97,16 +99,8 @@ public class MatrixMultiply {
     // Main function.
     public static void main(String[] args) throws IOException,
             ClassNotFoundException, InterruptedException {
-//        String input1 = "hdfs://192.168.1.128:9000/user/lxh/matrix/ma";
-//        String input2 = "hdfs://192.168.1.128:9000/user/lxh/matrix/mb";
-//        String output = "hdfs://192.168.1.128:9000/user/lxh/matrix/out";
 
         Configuration conf = new Configuration();
-//        conf.addResource("classpath:/hadoop/core-site.xml");
-//        conf.addResource("classpath:/hadoop/hdfs-site.xml");
-//        conf.addResource("classpath:/hadoop/mapred-site.xml");
-//        conf.addResource("classpath:/hadoop/yarn-site.xml");
-
         Job job = Job.getInstance(conf, "Matrix Multiply");
         job.setJarByClass(MatrixMultiply.class);
 
@@ -114,16 +108,12 @@ public class MatrixMultiply {
         job.setOutputValueClass(Text.class);
 
         job.setMapperClass(MatrixMapper.class);
-//        job.setCombinerClass(MatrixReducer.class);
         job.setReducerClass(MatrixReducer.class);
 
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
 
-//        FileInputFormat.setInputPaths(job, new Path(input1), new Path(input2));// 加载2个输入数据集
         FileInputFormat.setInputPaths(job, new Path(args[0]));
-//        Path outputPath = new Path(output);
-//        outputPath.getFileSystem(conf).delete(outputPath, true);
         Path outputPath = new Path(args[1]);
         outputPath.getFileSystem(conf).delete(outputPath, true);
         FileOutputFormat.setOutputPath(job, outputPath);
