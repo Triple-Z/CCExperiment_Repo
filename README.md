@@ -16,4 +16,4 @@ NUAA 云计算原理实验
 
 Copyright &copy; 2017 [TripleZ](https://github.com/Triple-Z)
 
-[MIT License]()
+[MIT License](https://github.com/Triple-Z/CCExperiment_Repo/blob/master/LICENSE.md)
